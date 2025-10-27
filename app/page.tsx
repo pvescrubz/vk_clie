@@ -15,7 +15,7 @@ import {
 } from '../types';
 import styles from './page.module.css';
 
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = 'http://92.63.176.115/api';
 
 
 
