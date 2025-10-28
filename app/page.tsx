@@ -15,7 +15,7 @@ import {
 } from '../types';
 import styles from './page.module.css';
 
-const API_BASE = 'http://92.63.176.115/api';
+const API_BASE = 'http://localhost:3001/api';
 
 
 
@@ -122,25 +122,107 @@ const sharePost = async (e: React.FormEvent) => {
   setShareResult(null);
   
   try {
-    const result: ShareData = await apiFetch(`${API_BASE}/share/post`, {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 300000);
+
+    const response = await fetch(`${API_BASE}/share/post`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         postUrl: shareData.postUrl
-      })
+      }),
+      signal: controller.signal
     });
-    setShareResult(result);
+
+    clearTimeout(timeoutId);
+
+    const responseText = await response.text();
+    
+    if (!response.ok) {
+      console.error('❌ Server error response:', responseText);
+      let errorMessage = `HTTP ${response.status}: ${responseText}`;
+      try {
+        const errorData = JSON.parse(responseText);
+        errorMessage = errorData.error || errorData.message || responseText;
+      } catch {}
+      throw new Error(errorMessage);
+    }
+
+    const serverResult = JSON.parse(responseText);
+    console.log('✅ Server response:', serverResult);
+    
+    // ✅ ПРЕОБРАЗУЕМ в правильный формат для типов
+    const formattedResult: ShareData = {
+      success: serverResult.success,
+      message: serverResult.message,
+      error: serverResult.error,
+      // ✅ Кладем данные в summary И data (для надежности)
+      summary: {
+        totalMessages: serverResult.totalMessages || 0,
+        successfulMessages: serverResult.successfulMessages || 0,
+        failedMessages: serverResult.failedMessages || 0,
+        totalSenders: serverResult.totalMessages || 0,
+        postInfo: {
+          ownerId: "0",
+          postId: "0",
+          fullPostId: serverResult.postUrl || shareData.postUrl
+        },
+        postUrl: serverResult.postUrl || shareData.postUrl,
+        results: (serverResult.details || []).map((detail: any, index: number) => ({
+          messageNumber: index + 1,
+          senderNumber: index + 1,
+          senderToken: '',
+          senderName: detail.sender || detail.senderName || 'Unknown Sender',
+          senderId: index + 1,
+          receiverName: detail.receiver || detail.receiverName || 'Unknown Receiver',
+          receiverId: index + 1000,
+          success: detail.success || false,
+          error: detail.error,
+          message: detail.success ? 'Сообщение отправлено' : detail.error
+        }))
+      },
+      // ✅ Дублируем в data для совместимости
+      data: {
+        totalMessages: serverResult.totalMessages || 0,
+        successfulMessages: serverResult.successfulMessages || 0,
+        failedMessages: serverResult.failedMessages || 0,
+        totalSenders: serverResult.totalMessages || 0,
+        postInfo: {
+          ownerId: "0",
+          postId: "0",
+          fullPostId: serverResult.postUrl || shareData.postUrl
+        },
+        postUrl: serverResult.postUrl || shareData.postUrl,
+        results: (serverResult.details || []).map((detail: any, index: number) => ({
+          messageNumber: index + 1,
+          senderNumber: index + 1,
+          senderToken: '',
+          senderName: detail.sender || detail.senderName || 'Unknown Sender',
+          senderId: index + 1,
+          receiverName: detail.receiver || detail.receiverName || 'Unknown Receiver',
+          receiverId: index + 1000,
+          success: detail.success || false,
+          error: detail.error,
+          message: detail.success ? 'Сообщение отправлено' : detail.error
+        }))
+      }
+    };
+    
+    console.log('📤 Formatted result for ShareResults:', formattedResult);
+    setShareResult(formattedResult);
+    
   } catch (error) {
-    // Исправляем установку состояния ошибки
-    const errorResult: ShareData = {
+    console.error('Share error:', error);
+    setShareResult({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
-    };
-    setShareResult(errorResult);
+    });
   } finally {
     setShareLoading(false);
   }
 };
-
 // Обновляем LoadingState
 const [loading, setLoading] = useState<LoadingState>({ 
   wall: false, 
