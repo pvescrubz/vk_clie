@@ -26,6 +26,15 @@ export interface WallInfo {
   fullPostId: string;
 }
 
+export interface ShareResultDetail {
+  sender?: string;
+  senderName?: string;
+  receiver?: string;
+  receiverName?: string;
+  success: boolean;
+  error?: string;
+}
+
 export interface GroupInfo {
   groupId: string;
   screenName: string;
@@ -67,11 +76,18 @@ export interface LikePostData {
   success: boolean;
   message?: string;
   error?: string;
+  status?: 'processing' | 'completed' | 'failed';
+  requestId?: string;
+  startedAt?: string;
   details?: string;
   summary?: LikeSummary;
   data?: LikeSummary;
+  // 🔥 ДОБАВЬТЕ ДЛЯ МНОЖЕСТВЕННЫХ ССЫЛОК
+  posts?: LikePostResult[];
+  totalPosts?: number;
+  processedPosts?: number;
+  currentPost?: string;
 }
-
 // Типы для Subscribe функционала
 export interface SubscribeResult {
   accountNumber: number;
@@ -123,15 +139,63 @@ export interface ShareSummary {
   results: ShareResult[];
 }
 
+export interface LikeMultipleRequest {
+  postUrls: string[];
+  tokenCount?: number;
+}
+
+export interface LikePostResult {
+  postUrl: string;
+  success: boolean;
+  message?: string;
+  error?: string;
+  summary?: LikeSummary;
+}
+
+
+export interface ShareMultipleRequest {
+  postUrls: string[];
+}
+
+export interface PostResult {
+  postUrl: string;
+  success: boolean;
+  message?: string;
+  error?: string;
+  results?: ShareResult[];
+  summary?: ShareSummary;
+}
+
+// 🔥 ОБНОВИТЕ ShareData ДОБАВИВ НОВЫЕ ПОЛЯ
 export interface ShareData {
   success: boolean;
   message?: string;
   error?: string;
-  details?: string;
+  status?: 'processing' | 'completed' | 'failed';
+  requestId?: string;
+  startedAt?: string;
+  details?: ShareResult[];
   summary?: ShareSummary;
   data?: ShareSummary;
+  // 🔥 ДОБАВЬТЕ ЭТИ ПОЛЯ ДЛЯ МНОЖЕСТВЕННЫХ ССЫЛОК
+  posts?: PostResult[];
+  totalPosts?: number;
+  processedPosts?: number;
+  currentPost?: string;
 }
 
+// 🔥 ДОПОЛНИТЕЛЬНЫЙ ИНТЕРФЕЙС ДЛЯ СТАТУСА ПРОГРЕССА
+export interface ProcessingStatus {
+  status: 'processing' | 'completed' | 'failed';
+  requestId: string;
+  processedPosts?: number;
+  totalPosts?: number;
+  currentPost?: string;
+  result?: any;
+  error?: string;
+  startedAt?: string;
+  completedAt?: string;
+}
 export interface ApiResponse<T = any> {
   success: boolean;
   data?: T;
